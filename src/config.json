@@ -1,0 +1,10 @@
+{
+  "api": { 
+    "invokeUrl": "https://hpi4z4hi34.execute-api.us-west-2.amazonaws.com/butn"
+  } ,
+  "cognito": {
+    "REGION": "us-west-2",
+    "USER_POOL_ID":"us-west-2_ulpTxUG4L",
+    "APP_CLIENT_ID": "5p2rvkov1i9409atlrr2pebdhb"
+  }
+}
