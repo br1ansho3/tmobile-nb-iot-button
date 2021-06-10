@@ -10,6 +10,7 @@ import Dashboard from './components/Dashboard';
 import ButtonLogs from './components/ButtonLogs';
 import {Auth} from 'aws-amplify';
 import AWS from 'aws-sdk';
+import { AuthenticationDetails, CognitoUserPool, CognitoUserAttribute, CognitoUser } from 'amazon-cognito-identity-js';
 import React, { Component } from 'react';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faEnvelope, faLock, faCaretRight, faSearch, faPlus } from '@fortawesome/free-solid-svg-icons';
@@ -18,6 +19,15 @@ import config from './config';
 // mapboxgl.accessToken = 'pk.eyJ1IjoiYnJpYW5oc3UiLCJhIjoiY2tueG9zdzl2MG43NTJxbzg5MXZveG93NSJ9.3dAlMnFfpPCVY5ALKx0wxw';
 library.add(faEnvelope, faLock, faCaretRight, faSearch, faPlus);
 
+const REGION = 'uw-west-2';
+//const DYNAMO_ENDPOINT = //secret;
+const USER_POOL_ID = 'us-west-2_ulpTxUG4L'//secret;
+const CLIENT_ID = "5p2rvkov1i9409atlrr2pebdhb"//secret;
+const IDENTITY_POOL_ID = 'us-west-2:ba669fc8-fadf-4aa6-a38c-d8d447b4c475'//secret;
+const USER_POOL_TOKEN = 'cognito-idp.us-east-1.amazonaws.com/us-east-1_123456789'//secret;
+AWS.config.update({
+  region: REGION,
+})
 
 class App extends Component {
   constructor(props){
@@ -85,42 +95,37 @@ class App extends Component {
   async componentDidMount() {
     try {
       const session = await Auth.currentSession();
-      //testing amazon location service
-      // const credentials = await Auth.currentUserCredentials();
-      // console.log(credentials);
       this.setAuthStatus(true);
-      console.log(session);
-      const user = await Auth.currentAuthenticatedUser();
       
-      console.log(user);
+      const user = await Auth.currentAuthenticatedUser();
       this.setUser(user);
+      console.log(session);
+      console.log(user);
+      // configure cognito credentials
       const token = session.getIdToken().getJwtToken();
-      console.log(token)
-      // set aws location services object
+      console.log(token);
+      AWS.config.region = "uw-west-2";
+      AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+        IdentityPoolId: 'us-west-2:ba669fc8-fadf-4aa6-a38c-d8d447b4c475',
+        RoleArn: 'arn:aws:cognito-identity:us-west-2:502544704682:identitypool/us-west-2:ba669fc8-fadf-4aa6-a38c-d8d447b4c475',
+        Logins: {
+            // optional tokens, used for authenticated login
+            // if you want to use Cognito user pool as an identity provider then
+            'cognito-idp.uw-west-2.amazonaws.com/us-west-2_ulpTxUG4L': `${token}`
+        }
+      });
+      console.log(AWS.config)
+      AWS.config.credentials.get(function(){
 
-    //   const credentials = new AWS.CognitoIdentityCredentials({
-    //     IdentityPoolId: "us-west-2:ba669fc8-fadf-4aa6-a38c-d8d447b4c475",
-    //     Logins: {
-    //       'cognito-idp.us-west-2.amazonaws.com/us-west-2_ulpTxUG4L': token
-    //     }
-    //   })
+        // Credentials will be available when this function is called.
+        var accessKeyId = AWS.config.credentials.accessKeyId;
+        var secretAccessKey = AWS.config.credentials.secretAccessKey;
+        var sessionToken = AWS.config.credentials.sessionToken;
+        
+      });
+      
 
-    //   console.log(credentials);
 
-    //   const client = new AWS.Location({
-    //     credentials,
-    //     region: AWS.config.region || "us-west-2"
-
-    //   })
-
-    //   console.log(client)
-    //   const rsp = await client.searchPlaceIndexForText({
-    //     IndexName: "testPlaceIndex",
-    //     Text: "Seattle",
-    //     BiasPosition: [47.6062, -122.3321]
-    //   }).promise();
-
-    //   console.log(rsp);
 
     } catch(error) {
       console.log(error)

@@ -5,6 +5,7 @@
 
 // import mapboxgl from 'mapbox-gl';
 // mapboxgl.accessToken = 'pk.eyJ1IjoiYnJpYW5oc3UiLCJhIjoiY2tueG9zdzl2MG43NTJxbzg5MXZveG93NSJ9.3dAlMnFfpPCVY5ALKx0wxw';
+
 // function Map() {
 //   const [viewport, setViewport] = useState({
 //     width: 400,

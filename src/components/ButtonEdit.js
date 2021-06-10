@@ -4,11 +4,14 @@ import SESfields from './SESfields';
 import {Auth} from 'aws-amplify';
 import axios from 'axios';
 import Map from './Map';
+import geofence from '../fence';
+
 // import ReactMapGL, {
 //     NavigationControl,
 //   } from "react-map-gl";
 //   import "mapbox-gl/dist/mapbox-gl.css";
 const config = require('../config.json');
+
 
 export default class ButtonEdit extends Component {
     state = {
@@ -29,10 +32,18 @@ export default class ButtonEdit extends Component {
         battery:"",
         latitude: "",
         longitude: "",
-        rssi: ""        
+        rssi: ""  ,
+        
+        //geofence
+        fenceCoordinates: [],
+        geoString: "",
+        inFence: false
     }
 
     componentDidMount = () => {
+        const fenceCoordinates = geofence.features[0].geometry.coordinates
+        this.setState({fenceCoordinates: fenceCoordinates});
+        //this.computeInFence();
         this.getDiagnostic();
         if(!this.props.button.isAdd) {
             this.getExistingButtonInfo();
@@ -41,11 +52,43 @@ export default class ButtonEdit extends Component {
     }
 
     //diag
+    computeInFence = (event) => {
+        
+        let coordinates = this.state.geoString;
+        coordinates = JSON.parse(coordinates);
 
+        coordinates = coordinates.features[0].geometry.coordinates[0]
+      
+        let maxLng = coordinates[0][0];
+        let minLng = coordinates[0][0];
+        let maxLat = coordinates[0][1];
+        let minLat = coordinates[0][1];;
+        // does not account for edge cases
+        coordinates.forEach((coord) => {
+            console.log(coord)
+            if(coord[0] < minLng) minLng = coord[0]
+            if(coord[0] > maxLng) maxLng = coord[0]
+            if(coord[1] < minLat) minLat = coord[1]
+            if(coord[1] > maxLat) maxLat = coord[1]
+        })
+        console.log("maxLng: " + maxLng)
+        console.log("mixLng: " + minLng)
+        console.log("maxLat: " + maxLat)
+        console.log("mixLat: " + minLat)
+        const currLng = parseFloat(this.state.longitude);
+        const currLat = parseFloat(this.state.latitude);
+        console.log(currLng);
+        console.log(currLat);
+        let inFence = (minLng <= currLng && currLng <= maxLng && minLat <= currLat && currLat <= maxLat) ? true : false; 
+        console.log(inFence);
+        // for coord in 
+        // const maxLng
+        // const minLng
+    }
     getDiagnostic = async () => {
         try {
             const res = await axios.get(`${config.api.invokeUrl}/buttons/${this.props.button.userid.username}/${this.props.button.buttonid}/diagnostic`);
-            console.log(res.data[0]);
+
             const {battery, latitude, longitude, rssi} = res.data[0];
             this.setState({battery: battery, latitude: latitude, longitude: longitude, rssi: rssi});
         }catch(err) {
@@ -61,6 +104,7 @@ export default class ButtonEdit extends Component {
     updateClicked = () => {
         this.handleAddButton(this.state.buttonid, this.props.auth.user.username, this.state.phoneNumber, 
                 this.state.message,this.state.SESemail, this.state.SESsubject, this.state.SEScontent, this.state.buttonname, this.state.singlePress, this.state.doublePress);
+        //this.props.history.push('/dashboard')
     }
 
     deleteClicked  = () => {
@@ -72,10 +116,10 @@ export default class ButtonEdit extends Component {
     dropDownOnChange = (event) => {
         let typePress = document.getElementById('typePressSelect').value;
         if(typePress == "singlePress") {
-            console.log("single")
+   
             this.setState({singlePress: event.target.value, pressFunction: event.target.value});
         } else if (typePress=== "doublePress") {
-            console.log('double')
+
             this.setState({doublePress: event.target.value, pressFunction: event.target.value});
         }
         this.setState({pressFunction: event.target.value});
@@ -88,13 +132,14 @@ export default class ButtonEdit extends Component {
 
     doubleClick = () => {
         console.log("doubleClicked");
+        console.log(this.state)
     }
 
     getExistingButtonInfo = async () => {
         try {
             const res = await axios.get(`${config.api.invokeUrl}/buttons/${this.props.button.userid.username}/${this.props.button.buttonid}`);
             const {ButtonID, UserID, message, phoneNumber, SESemail, SESsubject, SEScontent, ButtonName, singlePress, doublePress} = (res.data[0]);
-            console.log(res.data[0]);
+   
             this.setState({
 
                 phoneNumber: (phoneNumber=== undefined) ? "": phoneNumber,
@@ -112,8 +157,7 @@ export default class ButtonEdit extends Component {
         }catch(err) {
             console.log(`An error has occurred: ${err}`);
         }
-        console.log(this.props);
-        console.log(this.state);
+
     }
 
 
@@ -153,11 +197,12 @@ export default class ButtonEdit extends Component {
         this.setState({
           [event.target.id]: event.target.value
         });
+        console.log(this.state)
     };
 
     render() {
 
-        console.log(this.state);
+
         return (
             <div>
                 <div className="columns">
@@ -229,7 +274,25 @@ export default class ButtonEdit extends Component {
                             </div>
 
 
-                        </div>                       
+                        </div>   
+                        {/* Geofence */}
+                        <div className="field is-horizontal">
+                            <div className="field-label is-normal">
+                                <label className="label">Set GeoFence:</label>
+                            </div>
+                            <div className="field-body">
+                            
+                                <div className ="field">
+                                    <p className="control"><input  className="input" id="geoString" type="text" value={this.state.geoString} onChange={this.onInputChange} /></p>                            
+                                </div> 
+                            
+                                <div className="field">
+                                    <button className="button is-danger is-light mr-1" onClick={this.computeInFence}>Set</button>
+                                </div>
+  
+                            </div>
+
+                        </div>                
                     </div>
 
                     <div className="column"> 
@@ -254,7 +317,7 @@ export default class ButtonEdit extends Component {
                 <div className="container">
                     <button className="button mr-1" onClick={this.backClicked}>Back</button>
                     {/* <button className="button is-danger is-light mr-1" onClick={this.deleteClicked}>Delete</button> */}
-                    <button className="button is-danger is-light mr-1" onDoubleClick={this.doubleClick}>Delete</button>
+                    <button className="button is-danger is-light mr-1" onClick={this.handleDeleteButton}>Delete</button>
                     <button className="button is-tmobile is-primary" onClick={this.updateClicked}>Update</button>
                 </div>
 

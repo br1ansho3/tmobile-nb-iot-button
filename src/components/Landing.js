@@ -11,10 +11,10 @@ export default class Landing extends Component {
         <section className="hero is-tmobile">
           <div className="hero-body">
             <p className="title">
-              Hero title (Banner)
+              Tmobile NB IoT Button
             </p>
             <p class="subtitle">
-              Hero subtitle (Baneer information)
+              Programmable button purposed for sending text, email and many more!
             </p>
           </div>
         </section>
